@@ -10,7 +10,7 @@ const {
     ACC_TOK_EXPIRES_IN,
 } = process.env;
 
-REF_TOK_COOKIE_MAX_AGE = eval( process.env.REF_TOK_COOKIE_MAX_AGE );
+const REF_TOK_COOKIE_MAX_AGE = eval( process.env.REF_TOK_COOKIE_MAX_AGE );
 
 function newAccTok( payload ) {
     return jwt.sign( payload, ACC_TOK_KEY, { expiresIn: ACC_TOK_EXPIRES_IN } )
@@ -20,7 +20,7 @@ function newRefTok( payload ) {
     return jwt.sign( payload, REF_TOK_KEY, { expiresIn: REF_TOK_EXPIRES_IN } )
 }
 
-function gemRefTokAndAddToCookie( payload, res ) {
+function genRefTokAndAddToCookie( payload, res ) {
     const cookieProperties = { maxAge: REF_TOK_COOKIE_MAX_AGE, httpOnly: true };
     // res.cookie( cookieName, cookieValue, cookieProperties );
     res.cookie( "refTok", newRefTok( payload ), cookieProperties );
@@ -31,40 +31,61 @@ function verifyTok( tok, key ) {
 
     try { return jwt.verify( tok, key ); }
     catch ( err ) {
-        if ( err.name === 'JsonWebTokenError' ) throw new Error( "Invalid Token" );
-        if ( err.name === 'TokenExpiredError' ) throw new Error( "Token Expired" );
+        if ( err.name === 'JsonWebTokenError' ) throw new Error( "InvalidToken" );
+        if ( err.name === 'TokenExpiredError' ) throw new Error( "TokenExpired" );
     }
 }
 
 function auth( req, res, next ) {
+    console.log( "Authentication")
     try {
-        accTok = verifyTok( req.header( 'Authorization' ) );
-        refTok = verifyTok( req.cookies.refTok );
-        validateTokens( accTok, refTok );    
-        return next();
+        accTok = verifyTok( req.header( 'Authorization' ), ACC_TOK_KEY );
+        refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
+        validateAndAuthorizeTokens( accTok, refTok );
+        next();
     } catch ( err ) {
-        console.log( err );        
-        res.send( "lol" );
+        console.log( err.message );
+        res.send( err.message );
     }
-
 }
 
-router.get( "tok/ref", ( req, res, next ) => {
+router.get( "/tok/new-acc", ( req, res, next ) => {
 
+    console.log( "Verifying refTok")
     try {
-        refTok = verifyTok( req.cookies.refTok );
-        console.log( refTok );
-        Token.findById( refTok._id );
+        refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
+        // Do Validation on refTok
+        // ...
+        // Do creation of refTok payload
+        // ...
+        const userDoc = { _id:3, name:"aa" };
+        res.status(200).send( { accTok: newAccTok( userDoc ) } );
 
     } catch ( err ) {
-        console.log( err );
-        res.send( "lol" );
+        res.send( err.message );
     }
 })
 
+router.get( "/tok/new-ref", ( req, res, next ) => {
 
-function validateTokens( accTok, refTok ) {
+    console.log( "Verifying refTok")
+    try {
+        refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
+        // Do Validation on refTok
+        // ...
+        // Do creation of refTok payload
+        // ...
+        const userDoc = { _id:3, name:"aa" };
+        genRefTokAndAddToCookie( userDoc, res )
+        res.status(200).send("Attached new ref tok");
 
+    } catch ( err ) {
+        res.send( err.message );
+    }
+})
+
+function validateAndAuthorizeTokens( accTok, refTok ) {
+    console.log( "validating token")
 }
 
-module.exports = { auth, newAccTok, newRefTok };
+module.exports = { auth, newAccTok, newRefTok, gemRefTokAndAddToCookie: genRefTokAndAddToCookie, router };
