@@ -1,6 +1,6 @@
 const jwt = require( "jsonwebtoken" );
 // const Token = require( "mongoose" ).model( "tokens" );
-const router  = require( 'express' ).Router() ;
+const router = require( 'express' ).Router() ;
 
 const { 
     REF_TOK_KEY,
@@ -37,11 +37,12 @@ function verifyTok( tok, key ) {
 }
 
 function auth( req, res, next ) {
-    console.log( "Authentication")
+    console.log( "Authorizing...");
     try {
         accTok = verifyTok( req.header( 'Authorization' ), ACC_TOK_KEY );
         refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
-        validateAndAuthorizeTokens( accTok, refTok );
+        validateAndAuthorizeTokens( accTok, refTok, res );
+        console.log( "Authorized");
         next();
     } catch ( err ) {
         console.log( err.message );
@@ -51,12 +52,12 @@ function auth( req, res, next ) {
 
 router.get( "/tok/new-acc", ( req, res, next ) => {
 
-    console.log( "Verifying refTok")
+    console.log( "Verifying refTok" )
     try {
-        refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
+        const refTok = verifyTok( req.cookies.refTok, REF_TOK_KEY );
         // Do Validation on refTok
         // ...
-        // Do creation of refTok payload
+        // Do creation of accTok payload
         // ...
         const userDoc = { _id:3, name:"aa" };
         res.status(200).send( { accTok: newAccTok( userDoc ) } );
@@ -76,7 +77,7 @@ router.get( "/tok/new-ref", ( req, res, next ) => {
         // Do creation of refTok payload
         // ...
         const userDoc = { _id:3, name:"aa" };
-        genRefTokAndAddToCookie( userDoc, res )
+        genRefTokAndAddToCookie( userDoc, res );
         res.status(200).send("Attached new ref tok");
 
     } catch ( err ) {
@@ -84,8 +85,8 @@ router.get( "/tok/new-ref", ( req, res, next ) => {
     }
 })
 
-function validateAndAuthorizeTokens( accTok, refTok ) {
-    console.log( "validating token")
+function validateAndAuthorizeTokens( accTok, refTok, res ) {
+    console.log( "Validating Token");
 }
 
-module.exports = { auth, newAccTok, newRefTok, gemRefTokAndAddToCookie: genRefTokAndAddToCookie, router };
+module.exports = { auth, newAccTok, newRefTok, genRefTokAndAddToCookie, router };

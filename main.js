@@ -15,7 +15,7 @@ app.get( "/", ( req, res, next ) => {
 
 app.get("/login", ( req, res, next ) => {
     const userDoc = { _id:2, name:"aa" };
-    Token.gemRefTokAndAddToCookie( userDoc, res );
+    Token.genRefTokAndAddToCookie( userDoc, res );
     res.status(200).send( { accTok : Token.newAccTok( userDoc ) } );
 })
 app.use( Token.router );
