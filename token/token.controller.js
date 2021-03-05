@@ -1,56 +1,44 @@
 const jwt = require( "jsonwebtoken" );
+const userMade = require( "./token" );
 
 class Token {
-    _key;
-    _expiresIn;
-
+    #key;
+    #expiresIn;
     constructor( key, expiresIn ) {
-        this._key = key;
-        this._expiresIn = expiresIn;
+        this.#key = key;
+        this.#expiresIn = expiresIn;
     }
-
-    verify( tok ) {
+    getData( tok ) {
         if ( !tok ) throw new Error( "Token Not Found" );
-        try { return jwt.verify( tok, this._key ); }
+        try { return jwt.verify( tok, this.#key ); }
         catch ( err ) {
             if ( err.name === 'JsonWebTokenError' ) throw new Error( "InvalidToken" );
             if ( err.name === 'TokenExpiredError' ) throw new Error( "TokenExpired" );
         }
     }
-
-    getNewTok( payload ) {
-        return jwt.sign(payload, this._key, { expiresIn: this._expiresIn } );
-    }
-
-    getPayload() {
-        return { _id: 1, name: "aa" };
-    };
+    getTok( payload ) { return jwt.sign( payload, this.#key, { expiresIn: this.#expiresIn } ); }
 }
 
 class AccessToken extends Token {
-    constructor( key, expiresIn ) {
-        super( key, expiresIn );
-        this.getPayload = undefined
-    }
+    getPayload = userMade.accTok.getPayload;
+    constructor( key, expiresIn ) { super( key, expiresIn ); }
 }
 
 class RefreshToken extends Token {
-    #cookieProperties
-
+    #cookieProperties;
+    getPayload = userMade.refTok.getPayload;
     constructor( key, expiresIn, cookieMaxAge  ) {
         super( key, expiresIn );
         this.#cookieProperties = { maxAge: cookieMaxAge, httpOnly: true };
     }
-
-    validate() {
-        console.log( "Validating refTok");
+    validateTokData( tokData ) { console.log( "Validating refTok"); return tokData; }
+    addToCookie( res, tok ) { res.cookie( "refTok", tok, this.#cookieProperties ); }
+    handle( res, meta, refTokData ) {
+        const payload = this.getPayload( meta, refTokData );
+        const tok = this.getTok( payload );
+        this.addToCookie( res, tok );
+        return payload;
     }
-
-    createAndAddToCookie( res ) {
-        // res.cookie( cookieName, cookieValue, cookieProperties );
-        res.cookie( "refTok", this.getNewTok( this.getPayload() ), this.#cookieProperties );
-    }
-
 }
 
 module.exports.accTok = new AccessToken (
@@ -67,9 +55,9 @@ module.exports.refTok = new RefreshToken(
 module.exports.auth = ( req, res, next ) => {
     console.log( "Authorizing...");
     try {
-        accTok = this.accTok.verify( req.header( 'Authorization' ) );
-        refTok = this.refTok.verify( req.cookies.refTok );
-        // validateAndAuthorizeTokens( accTok, refTok, res );
+        accTokData = this.accTok.getData( req.header( 'Authorization' ) );
+        refTokData = this.refTok.getData( req.cookies.refTok );
+        userMade.validateAndAuthorizeToken( accTokData, refTokData );
         console.log( "Authorized");
         next();
     } catch ( err ) {

@@ -15,8 +15,8 @@ app.get( "/", ( req, res, next ) => {
 
 app.get("/login", ( req, res, next ) => {
     const userDoc = { _id:2, name:"aa" };
-    tok.refTok.createAndAddToCookie(res);
-    res.status(200).send( { accTok : tok.accTok.getNewTok( userDoc ) } );
+    const refTokData = tok.refTok.handle( res, userDoc );
+    res.status(200).send( { accTok : tok.accTok.getTok( tok.accTok.getPayload( undefined, refTokData ) ) } );
 })
 app.use(  tokRouter );
 
