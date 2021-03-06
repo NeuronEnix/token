@@ -10,29 +10,46 @@ class Token {
     }
     getData( tok ) {
         if ( !tok ) throw new Error( "Token Not Found" );
-        try { return jwt.verify( tok, this.#key ); }
+        try { 
+            const tokData = jwt.verify( tok, this.#key );
+            delete tokData.iat;
+            delete tokData.exp;
+            delete tokData.nbf;
+            delete tokData.jti;
+            return tokData;
+        }
         catch ( err ) {
             if ( err.name === 'JsonWebTokenError' ) throw new Error( "InvalidToken" );
             if ( err.name === 'TokenExpiredError' ) throw new Error( "TokenExpired" );
         }
     }
-    getTok( payload ) { return jwt.sign( payload, this.#key, { expiresIn: this.#expiresIn } ); }
+    getTok( payload ) {
+        return { data:payload, tok: jwt.sign( payload, this.#key, { expiresIn: this.#expiresIn } ) };
+    }
 }
 
 class AccessToken extends Token {
-    getPayload = userMade.accTok.getPayload;
     constructor( key, expiresIn ) { super( key, expiresIn ); }
+    getTok( payload, refTokData ) { 
+        return super.getTok( payload ? payload : userMade.refTok.getPayload( refTokData ) )
+    }
 }
 
 class RefreshToken extends Token {
     #cookieProperties;
-    getPayload = userMade.refTok.getPayload;
     constructor( key, expiresIn, cookieMaxAge  ) {
         super( key, expiresIn );
         this.#cookieProperties = { maxAge: cookieMaxAge, httpOnly: true };
     }
+    getTok( payload, refTokData ) { 
+        if( !payload ) payload = userMade.refTok.getPayload( refTokData );
+        payload._id = "tok_id";
+        return super.getTok( payload );
+    }
     validateTokData( tokData ) { console.log( "Validating refTok"); return tokData; }
-    addToCookie( res, tok ) { res.cookie( "refTok", tok, this.#cookieProperties ); }
+    addToCookie( res, tok ) { 
+        jwt.decode( tok,)
+        res.cookie( "refTok", tok, this.#cookieProperties ); }
     handle( res, meta, refTokData ) {
         const payload = this.getPayload( meta, refTokData );
         const tok = this.getTok( payload );

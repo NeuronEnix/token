@@ -1,19 +1,17 @@
 
 module.exports.refTok = {
-    getPayload: ( meta, refTokData ) => {
+    getPayload: ( refTokData ) => {
         console.log( "refTok::getPayload() -> user " )
-        if( meta ) console.log( "meta: ", meta )
-        else console.log( "refTokData: ", refTokData )
-        return { _id:0, name :11};
+        console.log( "refTokData: ", refTokData )
+        return refTokData;
     },
 }
 
 module.exports.accTok = {
-    getPayload: ( meta, refTokData ) => {
+    getPayload: ( refTokData ) => {
         console.log( "accTok::getPayload() -> user " )
-        if( meta ) console.log( "meta: ", meta )
-        else console.log( "refTokData: ", refTokData )
-        return { _id:0, name :11};
+        console.log( "refTokData: ", refTokData )
+        return { tid:refTokData._id, email:"a" };
     },
 }
 
