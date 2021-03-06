@@ -43,12 +43,11 @@ class RefreshToken extends Token {
     }
     getTok( payload, refTokData ) { 
         if( !payload ) payload = userMade.refTok.getPayload( refTokData );
-        payload._id = "tok_id";
+        payload.tid = "tok_id";
         return super.getTok( payload );
     }
     validateTokData( tokData ) { console.log( "Validating refTok"); return tokData; }
     addToCookie( res, tok ) { 
-        jwt.decode( tok,)
         res.cookie( "refTok", tok, this.#cookieProperties ); }
     handle( res, meta, refTokData ) {
         const payload = this.getPayload( meta, refTokData );
@@ -74,7 +73,7 @@ module.exports.auth = ( req, res, next ) => {
     try {
         accTokData = this.accTok.getData( req.header( 'Authorization' ) );
         refTokData = this.refTok.getData( req.cookies.refTok );
-        userMade.validateAndAuthorizeToken( accTokData, refTokData );
+        userMade.validateAndAuthorizeToken( accTokData, refTokData, res );
         console.log( "Authorized");
         next();
     } catch ( err ) {

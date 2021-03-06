@@ -25,7 +25,7 @@ app.post("/login", ( req, res, next ) => {
     const refTokPayload = { uid:userDoc._id };
     const newRefTok = tok.refTok.getTok( refTokPayload );
     tok.refTok.addToCookie( res, newRefTok.tok );
-    const accTokPayload = { tid:newRefTok.data._id, email: userDoc.email };
+    const accTokPayload = { tid:newRefTok.data.tid, email: userDoc.email };
     const newAccTok = tok.accTok.getTok( accTokPayload );
     res.status(200).send( { accTok : newAccTok.tok } );
 })
